@@ -52,6 +52,7 @@ def oss_upload(
         visit_endpoint = 'https://' + visit_endpoint
 
     bucket_obj = oss2.Bucket(auth=auth, endpoint=endpoint, bucket_name=bucket, is_cname=is_cname)
+    print(f'Uploading local file {file} to OSS bucket {bucket} with filename {filename}...')
     response = bucket_obj.put_object_from_file(filename, file)
 
     if response.status == 200:
@@ -66,6 +67,7 @@ def oss_upload(
             else:
                 endpoint_split = endpoint.split('//')
                 image_url = endpoint_split[0] + '//' + bucket + '.' + endpoint_split[1] + '/' + filename
+        print(f'status: {response.status}, image uploaded to OSS storage successfully, URL: {image_url}')                
         return image_url
     else:
         print(f'status: {response.status}, failed to upload image to OSS storage')

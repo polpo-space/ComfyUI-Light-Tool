@@ -225,47 +225,41 @@ class SaveURLsToHistory:
                 "uv_url": ("STRING", {"defaultInput": True, "default": ""}),
                 "depth_url": ("STRING", {"defaultInput": True, "default": ""}),
                 "binary_url": ("STRING", {"defaultInput": True, "default": ""}),
-                # 输出为 JSON（建议 true，方便 API 解析）
-                "return_json": ("BOOLEAN", {"default": True}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "save"
+    OUTPUT_NODE = True
+
+    def save(self, uv_url="", depth_url="", binary_url=""):
+
+        # 构建 JSON
+        url_dict = {}
+        if uv_url.strip():
+            url_dict["uv_url"] = uv_url.strip()
+        if depth_url.strip():
+            url_dict["depth_url"] = depth_url.strip()
+        if binary_url.strip():
+            url_dict["binary_url"] = binary_url.strip()
+
+        # 输出口返回 JSON 字符串（给下游用）
+        out = json.dumps(url_dict, ensure_ascii=False)
+
+        ui = {
+            "ui": {
+                "text": [f"{k}: {v}" for k, v in url_dict.items()],
+                "files": [
+                    {
+                        "filename": "urls.json",     # 虚拟文件名（不必真的存在）
+                        "subfolder": "",             # 可留空
+                        "type": "output",
+                        "metadata": url_dict         # 真正的 JSON 数据放这里
+                    }
+                ]
             }
         }
 
-    OUTPUT_NODE = True                  # 作为最终节点
-    RETURN_TYPES = ("STRING",)          # 返回一个字典
-    RETURN_NAMES = ("url_dict",)
-    FUNCTION = "save"
-    CATEGORY = "ComfyUI-Light-Tool/History"
-    DESCRIPTION = "聚合URL并作为字典返回"
-
-    def save(self,
-             uv_url="",
-             depth_url="",
-             binary_url="",             
-             return_json=True):
-
-        # 构建字典
-        url_dict = {}
-        
-        if uv_url and uv_url.strip():
-            url_dict["uv_url"] = uv_url.strip()
-        
-        if depth_url and depth_url.strip():
-            url_dict["depth_url"] = depth_url.strip()
-            
-        if binary_url and binary_url.strip():
-            url_dict["binary_url"] = binary_url.strip()
-
-        # 历史可见的 UI 文本
-        display_text = []
-        for key, value in url_dict.items():
-            display_text.append(f"{key}: {value}")
-        
-        # 历史可见的 UI 文本（每行一个 key: value）
-        display_text = [f"{k}: {v}" for k, v in url_dict.items()]
-        ui = {"ui": {"text": display_text if display_text else ["<no urls>"]}}
-
-        # 输出：推荐 JSON 字符串，便于你的服务端解析并写入 final_files
-        out = json.dumps(url_dict, ensure_ascii=False) if return_json else "\n".join(display_text)
         return (out,), ui
 
 

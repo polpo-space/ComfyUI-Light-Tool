@@ -215,13 +215,83 @@ class ConvertNumType:
         return (number,)
 
 
+# SaveURLsToHistory：聚合多个 URL 并作为最终输出显示在历史中
+class SaveURLsToHistory:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                # 至少一个输入口可接上游节点输出
+                "file_url_1": ("STRING", {"defaultInput": True, "default": ""}),
+            },
+            "optional": {
+                # 可再接更多（需要更多就按此格式继续加）
+                "file_url_2": ("STRING", {"defaultInput": True, "default": ""}),
+                "file_url_3": ("STRING", {"defaultInput": True, "default": ""}),
+                "file_url_4": ("STRING", {"defaultInput": True, "default": ""}),                
+                # 输出为 JSON（建议 true，方便 API 解析）
+                "return_json": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    OUTPUT_NODE = True                  # 作为最终节点
+    RETURN_TYPES = ("STRING",)          # 返回一个字符串（JSON或拼接）
+    RETURN_NAMES = ("urls",)
+    FUNCTION = "save"
+    CATEGORY = "ComfyUI-Light-Tool/History"
+    DESCRIPTION = "聚合多个URL并写入历史"
+
+    def _parse_extra(self, s):
+        s = (s or "").strip()
+        if not s:
+            return []
+        # 先尝试按 JSON 数组解析
+        try:
+            data = json.loads(s)
+            if isinstance(data, list):
+                return [str(x).strip() for x in data if str(x).strip()]
+        except Exception:
+            pass
+        # 退化为按换行或逗号分割
+        parts = [p.strip() for p in s.replace("\r", "").replace(",", "\n").split("\n")]
+        return [p for p in parts if p]
+
+    def save(self,
+             file_url_1="",
+             file_url_2="",
+             file_url_3="",
+             file_url_4="",             
+             return_json=True):
+
+        urls = []
+        for u in [file_url_1, file_url_2, file_url_3, file_url_4]:
+            u = (u or "").strip()
+            if u:
+                urls.append(u)    
+        # 去重并保序
+        seen = set()
+        deduped = []
+        for u in urls:
+            if u not in seen:
+                seen.add(u)
+                deduped.append(u)
+
+        # 历史可见的 UI 文本（每个 URL 一行）
+        ui = {"ui": {"text": deduped if deduped else ["<no urls>"]}}
+
+        # 返回字符串：JSON 或换行拼接
+        out = json.dumps(deduped) if return_json else ("\n".join(deduped))
+        return (out,), ui
+
+
 NODE_CLASS_MAPPINGS = {
 
     "Light-Tool: KeyValue": KeyValue,
     "Light-Tool: SerializeJsonObject": SerializeJsonObject,
     "Light-Tool: DeserializeJsonString": DeserializeJsonString,
     "Light-Tool: Calculate": Calculate,
-    "Light-Tool: ConvertNumType": ConvertNumType
+    "Light-Tool: ConvertNumType": ConvertNumType,
+    "Light-Tool: SaveURLsToHistory": SaveURLsToHistory
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -229,5 +299,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Light-Tool: SerializeJsonObject": "Light-Tool: Serialize a JSON object",
     "Light-Tool: DeserializeJsonString": "Light-Tool: Deserialize a JSON string",
     "Light-Tool: Calculate": "Light-Tool: Calculate",
-    "Light-Tool: ConvertNumType": "Light-Tool: Convert Num Type"
+    "Light-Tool: ConvertNumType": "Light-Tool: Convert Num Type",
+    "Light-Tool: SaveURLsToHistory": "Light-Tool: Save URLs to History (Final)"
 }

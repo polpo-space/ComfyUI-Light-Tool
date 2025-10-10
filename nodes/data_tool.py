@@ -231,7 +231,7 @@ class SaveURLsToHistory:
         }
 
     OUTPUT_NODE = True                  # 作为最终节点
-    RETURN_TYPES = (any_type,)          # 返回一个字典
+    RETURN_TYPES = ("STRING",)          # 返回一个字典
     RETURN_NAMES = ("url_dict",)
     FUNCTION = "save"
     CATEGORY = "ComfyUI-Light-Tool/History"
@@ -260,14 +260,13 @@ class SaveURLsToHistory:
         for key, value in url_dict.items():
             display_text.append(f"{key}: {value}")
         
+        # 历史可见的 UI 文本（每行一个 key: value）
+        display_text = [f"{k}: {v}" for k, v in url_dict.items()]
         ui = {"ui": {"text": display_text if display_text else ["<no urls>"]}}
 
-        # 返回字典或JSON字符串
-        if return_json:
-            out = json.dumps(url_dict, ensure_ascii=False)
-            return (out,), ui
-        else:
-            return (url_dict,), ui
+        # 输出：推荐 JSON 字符串，便于你的服务端解析并写入 final_files
+        out = json.dumps(url_dict, ensure_ascii=False) if return_json else "\n".join(display_text)
+        return (out,), ui
 
 
 NODE_CLASS_MAPPINGS = {

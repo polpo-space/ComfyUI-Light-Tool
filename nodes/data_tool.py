@@ -220,68 +220,54 @@ class SaveURLsToHistory:
     @classmethod
     def INPUT_TYPES(cls):
         return {
-            "required": {
-                # 至少一个输入口可接上游节点输出
-                "file_url_1": ("STRING", {"defaultInput": True, "default": ""}),
-            },
+            "required": {},
             "optional": {
-                # 可再接更多（需要更多就按此格式继续加）
-                "file_url_2": ("STRING", {"defaultInput": True, "default": ""}),
-                "file_url_3": ("STRING", {"defaultInput": True, "default": ""}),
-                "file_url_4": ("STRING", {"defaultInput": True, "default": ""}),                
+                "uv_url": ("STRING", {"defaultInput": True, "default": ""}),
+                "depth_url": ("STRING", {"defaultInput": True, "default": ""}),
+                "binary_url": ("STRING", {"defaultInput": True, "default": ""}),
                 # 输出为 JSON（建议 true，方便 API 解析）
                 "return_json": ("BOOLEAN", {"default": True}),
             }
         }
 
     OUTPUT_NODE = True                  # 作为最终节点
-    RETURN_TYPES = ("STRING",)          # 返回一个字符串（JSON或拼接）
-    RETURN_NAMES = ("urls",)
+    RETURN_TYPES = (any_type,)          # 返回一个字典
+    RETURN_NAMES = ("url_dict",)
     FUNCTION = "save"
     CATEGORY = "ComfyUI-Light-Tool/History"
-    DESCRIPTION = "聚合多个URL并写入历史"
-
-    def _parse_extra(self, s):
-        s = (s or "").strip()
-        if not s:
-            return []
-        # 先尝试按 JSON 数组解析
-        try:
-            data = json.loads(s)
-            if isinstance(data, list):
-                return [str(x).strip() for x in data if str(x).strip()]
-        except Exception:
-            pass
-        # 退化为按换行或逗号分割
-        parts = [p.strip() for p in s.replace("\r", "").replace(",", "\n").split("\n")]
-        return [p for p in parts if p]
+    DESCRIPTION = "聚合URL并作为字典返回"
 
     def save(self,
-             file_url_1="",
-             file_url_2="",
-             file_url_3="",
-             file_url_4="",             
+             uv_url="",
+             depth_url="",
+             binary_url="",             
              return_json=True):
 
-        urls = []
-        for u in [file_url_1, file_url_2, file_url_3, file_url_4]:
-            u = (u or "").strip()
-            if u:
-                urls.append(u)    
-        # 去重并保序
-        seen = set()
-        deduped = []
-        for u in urls:
-            if u not in seen:
-                seen.add(u)
-                deduped.append(u)
+        # 构建字典
+        url_dict = {}
+        
+        if uv_url and uv_url.strip():
+            url_dict["uv_url"] = uv_url.strip()
+        
+        if depth_url and depth_url.strip():
+            url_dict["depth_url"] = depth_url.strip()
+            
+        if binary_url and binary_url.strip():
+            url_dict["binary_url"] = binary_url.strip()
 
-        # 历史可见的 UI 文本（每个 URL 一行）
-        ui = {"ui": {"text": deduped if deduped else ["<no urls>"]}}
+        # 历史可见的 UI 文本
+        display_text = []
+        for key, value in url_dict.items():
+            display_text.append(f"{key}: {value}")
+        
+        ui = {"ui": {"text": display_text if display_text else ["<no urls>"]}}
 
-        # 返回字符串：JSON 或换行拼接
-        out = json.dumps(deduped) if return_json else ("\n".join(deduped))
-        return (out,), ui
+        # 返回字典或JSON字符串
+        if return_json:
+            out = json.dumps(url_dict, ensure_ascii=False)
+            return (out,), ui
+        else:
+            return (url_dict,), ui
 
 
 NODE_CLASS_MAPPINGS = {

@@ -1120,7 +1120,7 @@ class SaveVideoToAliyunOss:
 
         video_url = oss_upload(
             file_path,
-            filename=os.path.basename(file_path),
+            filename=save_name,
             endpoint=endpoint,
             bucket=bucket,
             oss_access_key_id=oss_access_key_id,
@@ -1182,7 +1182,7 @@ class SaveToAliyunOSS:
 
         file_url = oss_upload(
             file_path,
-            filename=os.path.basename(file_path),
+            filename=save_name,
             endpoint=endpoint,
             bucket=bucket,
             oss_access_key_id=oss_access_key_id,

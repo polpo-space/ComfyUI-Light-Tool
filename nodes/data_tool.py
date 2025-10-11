@@ -165,6 +165,7 @@ class DeserializePolpoProcessConfig:
         "STRING",
         "STRING",
         "STRING",
+        "STRING",
     )
     RETURN_NAMES = (
         "oss_endpoint",
@@ -173,6 +174,7 @@ class DeserializePolpoProcessConfig:
         "oss_access_key_secret",
         "width",
         "height",
+        "origin_image_url",
         "uv_image_keypath",
         "binary_image_keypath",
         "depth_image_keypath",
@@ -277,6 +279,7 @@ class DeserializePolpoProcessConfig:
                     "origin_image_url": origin_image_url,
                     "width": width,
                     "height": height,
+                    "origin_image_url": origin_image_url,
                     "uv_image_keypath": uv_image_keypath,
                     "binary_image_keypath": binary_image_keypath,
                     "depth_image_keypath": depth_image_keypath,
@@ -292,6 +295,7 @@ class DeserializePolpoProcessConfig:
             oss_access_key_secret,
             width,
             height,
+            origin_image_url,
             uv_image_keypath,
             binary_image_keypath,
             depth_image_keypath,

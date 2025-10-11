@@ -221,7 +221,7 @@ class DeserializePolpoProcessConfig:
             except Exception:
                 data = {}
 
-        oss_endpoint = self._as_str(data.get("oss_endpoint", "")).strip()
+        oss_endpoint = self._as_str(data.get("oss_endpoint", "https://oss-cn-shenzhen.aliyuncs.com")).strip()
         oss_bucket_name = self._as_str(data.get("oss_bucket_name", "")).strip()
         oss_access_key_id = self._as_str(data.get("oss_access_key_id", ""))
         oss_access_key_secret = self._as_str(data.get("oss_access_key_secret", ""))
@@ -253,11 +253,7 @@ class DeserializePolpoProcessConfig:
         oss_bucket_name = oss_bucket_name.strip()
         oss_access_key_id = oss_access_key_id.strip()
         oss_access_key_secret = oss_access_key_secret.strip()
-
-        if not oss_endpoint:
-            raise ValueError(
-                "PolpoProcessConfigDecoder: 'oss_endpoint' is required in the JSON input."
-            )
+        
         if not oss_bucket_name:
             raise ValueError(
                 "PolpoProcessConfigDecoder: 'oss_bucket_name' is required in the JSON input."
@@ -286,24 +282,21 @@ class DeserializePolpoProcessConfig:
             data.get("depth_image_keypath", default_path("depth"))
         )
 
-        try:
-            print(
-                "[PolpoProcessConfigDecoder] Parsed:",
-                {
-                    "oss_endpoint": oss_endpoint,
-                    "oss_bucket_name": oss_bucket_name,
-                    "oss_access_key_id": self._mask(oss_access_key_id),
-                    "oss_access_key_secret": self._mask(oss_access_key_secret),
-                    "origin_image_url": origin_image_url,
-                    "width": width,
-                    "height": height,
-                    "uv_image_keypath": uv_image_keypath,
-                    "binary_image_keypath": binary_image_keypath,
-                    "depth_image_keypath": depth_image_keypath,
-                },
-            )
-        except Exception:
-            pass
+        print(
+            "[PolpoProcessConfigDecoder] Parsed:",
+            {
+                "oss_endpoint": oss_endpoint,
+                "oss_bucket_name": oss_bucket_name,
+                "oss_access_key_id": self._mask(oss_access_key_id),
+                "oss_access_key_secret": self._mask(oss_access_key_secret),
+                "origin_image_url": origin_image_url,
+                "width": width,
+                "height": height,
+                "uv_image_keypath": uv_image_keypath,
+                "binary_image_keypath": binary_image_keypath,
+                "depth_image_keypath": depth_image_keypath,
+            },
+        )
 
         return (
             oss_endpoint,

@@ -221,27 +221,17 @@ class DeserializePolpoProcessConfig:
             except Exception:
                 data = {}
 
-        oss_endpoint = self._as_str(
-            data.get("oss_endpoint", os.getenv("OSS_ENDPOINT", ""))
-        )
-        oss_bucket_name = self._as_str(
-            data.get("oss_bucket_name", os.getenv("OSS_BUCKET_NAME", ""))
-        )
-        oss_access_key_id = self._as_str(
-            data.get("oss_access_key_id", os.getenv("OSS_ACCESS_KEY_ID", ""))
-        )
-        oss_access_key_secret = self._as_str(
-            data.get(
-                "oss_access_key_secret", os.getenv("OSS_ACCESS_KEY_SECRET", "")
-            )
-        )
+        oss_endpoint = self._as_str(data.get("oss_endpoint", "")).strip()
+        oss_bucket_name = self._as_str(data.get("oss_bucket_name", "")).strip()
+        oss_access_key_id = self._as_str(data.get("oss_access_key_id", ""))
+        oss_access_key_secret = self._as_str(data.get("oss_access_key_secret", ""))
+
 
         width = self._as_int(data.get("width", 0), default=0)
         height = self._as_int(data.get("height", 0), default=0)
 
         origin_image_url = self._as_str(data.get("origin_image_url", "")).strip()
         filename_raw = ""
-
         if origin_image_url:
             try:
                 parsed_url = urlparse(origin_image_url)
@@ -253,6 +243,34 @@ class DeserializePolpoProcessConfig:
             filename_raw = self._as_str(data.get("filename", "")).strip()
 
         filename = os.path.splitext(filename_raw)[0] if filename_raw else "image"
+
+        if oss_endpoint.startswith("https://"):
+            oss_endpoint = oss_endpoint[len("https://") :]
+        elif oss_endpoint.startswith("http://"):
+            oss_endpoint = oss_endpoint[len("http://") :]
+
+        oss_endpoint = oss_endpoint.strip()
+        oss_bucket_name = oss_bucket_name.strip()
+        oss_access_key_id = oss_access_key_id.strip()
+        oss_access_key_secret = oss_access_key_secret.strip()
+
+        if not oss_endpoint:
+            raise ValueError(
+                "PolpoProcessConfigDecoder: 'oss_endpoint' is required in the JSON input."
+            )
+        if not oss_bucket_name:
+            raise ValueError(
+                "PolpoProcessConfigDecoder: 'oss_bucket_name' is required in the JSON input."
+            )
+        if not oss_access_key_id:
+            raise ValueError(
+                "PolpoProcessConfigDecoder: 'oss_access_key_id' is required in the JSON input."
+            )
+        if not oss_access_key_secret:
+            raise ValueError(
+                "PolpoProcessConfigDecoder: 'oss_access_key_secret' is required in the JSON input."
+            )
+
         now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
         def default_path(suffix):
@@ -270,7 +288,7 @@ class DeserializePolpoProcessConfig:
 
         try:
             print(
-                "[DeserializePolpoProcessConfig] Parsed:",
+                "[PolpoProcessConfigDecoder] Parsed:",
                 {
                     "oss_endpoint": oss_endpoint,
                     "oss_bucket_name": oss_bucket_name,
@@ -279,7 +297,6 @@ class DeserializePolpoProcessConfig:
                     "origin_image_url": origin_image_url,
                     "width": width,
                     "height": height,
-                    "origin_image_url": origin_image_url,
                     "uv_image_keypath": uv_image_keypath,
                     "binary_image_keypath": binary_image_keypath,
                     "depth_image_keypath": depth_image_keypath,

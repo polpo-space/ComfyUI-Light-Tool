@@ -166,6 +166,8 @@ class DeserializePolpoProcessConfig:
         "STRING",
         "STRING",
         "STRING",
+        "STRING",
+        "STRING",
     )
     RETURN_NAMES = (
         "oss_endpoint",
@@ -178,6 +180,8 @@ class DeserializePolpoProcessConfig:
         "uv_image_keypath",
         "binary_image_keypath",
         "depth_image_keypath",
+        "normal_map_keypath",
+        "outpaint_keypath",
     )
 
     FUNCTION = "decode"
@@ -281,6 +285,12 @@ class DeserializePolpoProcessConfig:
         depth_image_keypath = self._as_str(
             data.get("depth_image_keypath", default_path("depth"))
         )
+        normal_map_keypath = self._as_str(
+            data.get("normal_map_keypath", default_path("normal_map"))
+        )
+        outpaint_keypath = self._as_str(
+            data.get("outpaint_keypath", default_path("outpaint"))
+        )
 
         print(
             "[PolpoProcessConfigDecoder] Parsed:",
@@ -295,6 +305,8 @@ class DeserializePolpoProcessConfig:
                 "uv_image_keypath": uv_image_keypath,
                 "binary_image_keypath": binary_image_keypath,
                 "depth_image_keypath": depth_image_keypath,
+                "normal_map_keypath": normal_map_keypath,
+                "outpaint_keypath": outpaint_keypath,
             },
         )
 
@@ -309,6 +321,8 @@ class DeserializePolpoProcessConfig:
             uv_image_keypath,
             binary_image_keypath,
             depth_image_keypath,
+            normal_map_keypath,
+            outpaint_keypath,
         )
 
 

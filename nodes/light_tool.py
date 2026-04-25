@@ -1151,6 +1151,78 @@ class SaveToSignedPutURL:
         return ((result_url.strip() or put_url.split("?", 1)[0]),)
 
 
+class SaveImageToSignedPutURL(SaveToSignedPutURL):
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),
+                "put_url": ("STRING", {"default": ""}),
+                "result_url": ("STRING", {"default": ""}),
+                "format": (["PNG", "JPEG", "WEBP"], {"default": "PNG"}),
+                "content_type": ("STRING", {"default": ""}),
+                "headers": ("STRING", {"default": "", "multiline": True}),
+                "timeout": ("INT", {"default": 120}),
+            }
+        }
+
+    OUTPUT_NODE = True
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("file_url",)
+    FUNCTION = "save_image"
+    CATEGORY = 'ComfyUI-Light-Tool/Upload'
+    DESCRIPTION = "Uploads an image to a signed PUT URL without saving it locally"
+
+    @staticmethod
+    def _content_type_for_format(image_format):
+        if image_format == "PNG":
+            return "image/png"
+        if image_format == "JPEG":
+            return "image/jpeg"
+        if image_format == "WEBP":
+            return "image/webp"
+        return "application/octet-stream"
+
+    def _encode_image(self, image, image_format):
+        pil_image = tensor2pil(image)
+        if image_format == "JPEG":
+            pil_image = pil_image.convert("RGB")
+
+        image_bytes = io.BytesIO()
+        pil_image.save(image_bytes, format=image_format)
+        return image_bytes.getvalue()
+
+    def save_image(self, images, put_url, result_url, format, content_type, headers, timeout):
+        put_url = put_url.strip()
+        if not put_url:
+            raise ValueError("(ComfyUI-Light-Tool/Upload) put_url is required")
+        if len(images) != 1:
+            raise ValueError(
+                "(ComfyUI-Light-Tool/Upload) SaveImageToSignedPutURL expects exactly one image"
+            )
+
+        image_format = format.strip().upper()
+        if image_format not in ("PNG", "JPEG", "WEBP"):
+            raise ValueError("(ComfyUI-Light-Tool/Upload) format must be PNG, JPEG, or WEBP")
+
+        resolved_content_type = content_type.strip() or self._content_type_for_format(image_format)
+        upload_headers = self._parse_headers(headers, resolved_content_type)
+        response = httpx.put(
+            put_url,
+            content=self._encode_image(images[0], image_format),
+            headers=upload_headers,
+            timeout=timeout if timeout > 0 else None,
+        )
+
+        if response.status_code < 200 or response.status_code >= 300:
+            raise RuntimeError(
+                f"(ComfyUI-Light-Tool/Upload) signed PUT failed: "
+                f"status={response.status_code}, body={response.text[:500]}"
+            )
+
+        return ((result_url.strip() or put_url.split("?", 1)[0]),)
+
+
 class GetImageSize:
     def __init__(self):
         pass
@@ -1728,6 +1800,7 @@ NODE_CLASS_MAPPINGS = {
     "Light-Tool: LoadVideo": LoadVideo,
     "Light-Tool: SaveVideo": SaveVideo,
     "Light-Tool: SaveToSignedPutURL": SaveToSignedPutURL,
+    "Light-Tool: SaveImageToSignedPutURL": SaveImageToSignedPutURL,
     "Light-Tool: LoadMetadataFromURL": LoadMetadataFromURL,
     "Light-Tool: SaveMetadata": SaveMetadata,
     "Light-Tool: GetImagesCount": GetImagesCount,
@@ -1770,6 +1843,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Light-Tool: LoadVideo": "Light-Tool: Load Video",
     "Light-Tool: SaveVideo": "Light-Tool: Save Video",
     "Light-Tool: SaveToSignedPutURL": "Light-Tool: Save File To Signed PUT URL",
+    "Light-Tool: SaveImageToSignedPutURL": "Light-Tool: Save Image To Signed PUT URL",
     "Light-Tool: LoadMetadataFromURL": "Light-Tool: Load Metadata From URL",
     "Light-Tool: SaveMetadata": "Light-Tool: Save Metadata",
     "Light-Tool: GetImagesCount": "Light-Tool: Get Images Count",

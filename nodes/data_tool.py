@@ -1,8 +1,5 @@
-import datetime
 import json
-import os
 import re
-from urllib.parse import urlparse
 
 
 class AnyType(str):
@@ -123,11 +120,10 @@ class DeserializeJsonString:
         return (json_dict,)
 
 
-class DeserializePolpoProcessConfig:
+class DeserializeWownowProcessConfig:
     """
-    Decode a Polpo process configuration JSON string into individual outputs.
-    Falls back to environment variables for credentials and generates timestamped
-    image keypaths when not provided.
+    Decode a Wownow process configuration JSON string into individual outputs.
+    Upload targets are provider-neutral signed PUT URLs.
     """
 
     @classmethod
@@ -141,13 +137,14 @@ class DeserializePolpoProcessConfig:
                         "default": "",
                         "placeholder": (
                             '{\n'
-                            '  "oss_endpoint": "oss-cn-shenzhen.aliyuncs.com",\n'
-                            '  "oss_bucket_name": "wownow-storage",\n'
-                            '  "oss_access_key_id": "AKID...",\n'
-                            '  "oss_access_key_secret": "AKSECRET...",\n'
                             '  "width": 1024,\n'
                             '  "height": 1024,\n'
-                            '  "origin_image_url": "https://cdn.example.com/images/f3301718e9dbf7e7d703b73a144afa32.jpg"\n'
+                            '  "origin_image_url": "https://cdn.example.com/images/f3301718e9dbf7e7d703b73a144afa32.jpg",\n'
+                            '  "uv_image_put_url": "https://storage.example.com/upload/uv.png?signature=...",\n'
+                            '  "binary_image_put_url": "https://storage.example.com/upload/binary.png?signature=...",\n'
+                            '  "depth_image_put_url": "https://storage.example.com/upload/depth.png?signature=...",\n'
+                            '  "normalmap_image_put_url": "https://storage.example.com/upload/normal_map.png?signature=...",\n'
+                            '  "outpaint_image_put_url": "https://storage.example.com/upload/outpaint.png?signature=..."\n'
                             '}'
                         ),
                     },
@@ -156,10 +153,6 @@ class DeserializePolpoProcessConfig:
         }
 
     RETURN_TYPES = (
-        "STRING",
-        "STRING",
-        "STRING",
-        "STRING",
         "INT",
         "INT",
         "STRING",
@@ -170,25 +163,20 @@ class DeserializePolpoProcessConfig:
         "STRING",
     )
     RETURN_NAMES = (
-        "oss_endpoint",
-        "oss_bucket_name",
-        "oss_access_key_id",
-        "oss_access_key_secret",
         "width",
         "height",
         "origin_image_url",
-        "uv_image_keypath",
-        "binary_image_keypath",
-        "depth_image_keypath",
-        "normal_map_keypath",
-        "outpaint_keypath",
+        "uv_image_put_url",
+        "binary_image_put_url",
+        "depth_image_put_url",
+        "normalmap_image_put_url",
+        "outpaint_image_put_url",
     )
 
     FUNCTION = "decode"
     CATEGORY = "ComfyUI-Light-Tool/DataProcessing"
     DESCRIPTION = (
-        "Decode JSON into OSS credentials and Polpo image keypaths, "
-        "auto-generating missing paths with timestamps."
+        "Decode JSON into Wownow process settings and signed PUT upload URLs."
     )
 
     def _as_str(self, value, default=""):
@@ -204,17 +192,6 @@ class DeserializePolpoProcessConfig:
         except Exception:
             return default
 
-    def _mask(self, secret, keep_start=3, keep_end=2):
-        if not secret:
-            return secret
-        if len(secret) <= keep_start + keep_end:
-            return "*" * len(secret)
-        return (
-            secret[:keep_start]
-            + "*" * (len(secret) - keep_start - keep_end)
-            + secret[-keep_end:]
-        )
-
     def decode(self, json_str: str):
         data = {}
         if json_str and json_str.strip():
@@ -225,104 +202,43 @@ class DeserializePolpoProcessConfig:
             except Exception:
                 data = {}
 
-        oss_endpoint = self._as_str(data.get("oss_endpoint", "https://oss-cn-shenzhen.aliyuncs.com")).strip()
-        oss_bucket_name = self._as_str(data.get("oss_bucket_name", "")).strip()
-        oss_access_key_id = self._as_str(data.get("oss_access_key_id", ""))
-        oss_access_key_secret = self._as_str(data.get("oss_access_key_secret", ""))
-
-
         width = self._as_int(data.get("width", 0), default=0)
         height = self._as_int(data.get("height", 0), default=0)
-
         origin_image_url = self._as_str(data.get("origin_image_url", "")).strip()
-        filename_raw = ""
-        if origin_image_url:
-            try:
-                parsed_url = urlparse(origin_image_url)
-                filename_raw = os.path.basename(parsed_url.path)
-            except Exception:
-                filename_raw = ""
 
-        if not filename_raw:
-            filename_raw = self._as_str(data.get("filename", "")).strip()
-
-        filename = os.path.splitext(filename_raw)[0] if filename_raw else "image"
-
-        if oss_endpoint.startswith("https://"):
-            oss_endpoint = oss_endpoint[len("https://") :]
-        elif oss_endpoint.startswith("http://"):
-            oss_endpoint = oss_endpoint[len("http://") :]
-
-        oss_endpoint = oss_endpoint.strip()
-        oss_bucket_name = oss_bucket_name.strip()
-        oss_access_key_id = oss_access_key_id.strip()
-        oss_access_key_secret = oss_access_key_secret.strip()
-        
-        if not oss_bucket_name:
-            raise ValueError(
-                "PolpoProcessConfigDecoder: 'oss_bucket_name' is required in the JSON input."
-            )
-        if not oss_access_key_id:
-            raise ValueError(
-                "PolpoProcessConfigDecoder: 'oss_access_key_id' is required in the JSON input."
-            )
-        if not oss_access_key_secret:
-            raise ValueError(
-                "PolpoProcessConfigDecoder: 'oss_access_key_secret' is required in the JSON input."
-            )
-
-        now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        def default_path(suffix):
-            return f"upload/{now_str}/{filename}_{suffix}.png"
-
-        uv_image_keypath = self._as_str(
-            data.get("uv_image_keypath", default_path("uv"))
-        )
-        binary_image_keypath = self._as_str(
-            data.get("binary_image_keypath", default_path("binary"))
-        )
-        depth_image_keypath = self._as_str(
-            data.get("depth_image_keypath", default_path("depth"))
-        )
-        normal_map_keypath = self._as_str(
-            data.get("normal_map_keypath", default_path("normal_map"))
-        )
-        outpaint_keypath = self._as_str(
-            data.get("outpaint_keypath", default_path("outpaint"))
-        )
+        uv_image_put_url = self._as_str(data.get("uv_image_put_url", "")).strip()
+        binary_image_put_url = self._as_str(data.get("binary_image_put_url", "")).strip()
+        depth_image_put_url = self._as_str(data.get("depth_image_put_url", "")).strip()
+        normalmap_image_put_url = self._as_str(
+            data.get("normalmap_image_put_url", "")
+        ).strip()
+        outpaint_image_put_url = self._as_str(
+            data.get("outpaint_image_put_url", "")
+        ).strip()
 
         print(
-            "[PolpoProcessConfigDecoder] Parsed:",
+            "[WownowProcessConfigDecoder] Parsed:",
             {
-                "oss_endpoint": oss_endpoint,
-                "oss_bucket_name": oss_bucket_name,
-                "oss_access_key_id": self._mask(oss_access_key_id),
-                "oss_access_key_secret": self._mask(oss_access_key_secret),
                 "origin_image_url": origin_image_url,
                 "width": width,
                 "height": height,
-                "uv_image_keypath": uv_image_keypath,
-                "binary_image_keypath": binary_image_keypath,
-                "depth_image_keypath": depth_image_keypath,
-                "normal_map_keypath": normal_map_keypath,
-                "outpaint_keypath": outpaint_keypath,
+                "uv_image_put_url": uv_image_put_url,
+                "binary_image_put_url": binary_image_put_url,
+                "depth_image_put_url": depth_image_put_url,
+                "normalmap_image_put_url": normalmap_image_put_url,
+                "outpaint_image_put_url": outpaint_image_put_url,
             },
         )
 
         return (
-            oss_endpoint,
-            oss_bucket_name,
-            oss_access_key_id,
-            oss_access_key_secret,
             width,
             height,
             origin_image_url,
-            uv_image_keypath,
-            binary_image_keypath,
-            depth_image_keypath,
-            normal_map_keypath,
-            outpaint_keypath,
+            uv_image_put_url,
+            binary_image_put_url,
+            depth_image_put_url,
+            normalmap_image_put_url,
+            outpaint_image_put_url,
         )
 
 
@@ -427,7 +343,7 @@ NODE_CLASS_MAPPINGS = {
     "Light-Tool: KeyValue": KeyValue,
     "Light-Tool: SerializeJsonObject": SerializeJsonObject,
     "Light-Tool: DeserializeJsonString": DeserializeJsonString,
-    "Light-Tool: DeserializePolpoProcessConfig": DeserializePolpoProcessConfig,
+    "Light-Tool: DeserializeWownowProcessConfig": DeserializeWownowProcessConfig,
     "Light-Tool: Calculate": Calculate,
     "Light-Tool: ConvertNumType": ConvertNumType,
 }
@@ -436,7 +352,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Light-Tool: KeyValue": "Light-Tool: Get values from JSON",
     "Light-Tool: SerializeJsonObject": "Light-Tool: Serialize a JSON object",
     "Light-Tool: DeserializeJsonString": "Light-Tool: Deserialize a JSON string",
-    "Light-Tool: DeserializePolpoProcessConfig": "Light-Tool: Polpo Process Config Decoder",
+    "Light-Tool: DeserializeWownowProcessConfig": "Light-Tool: Wownow Process Config Decoder",
     "Light-Tool: Calculate": "Light-Tool: Calculate",
     "Light-Tool: ConvertNumType": "Light-Tool: Convert Num Type",
 }

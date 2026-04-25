@@ -89,9 +89,31 @@ git clone https://github.com/ihmily/ComfyUI-Light-Tool.git
 | **PhantomTankEffect**                          | 生成“幽灵坦克” ”幻影坦克“ 效果         |
 | **Is Transparent**                             | 检测图片是否是透明的。                 |
 | **Mask Bounding Box Cropping**                 | 根据蒙版边界裁剪图片。                 |
-| **Save to Aliyun OSS**                         | 上传(图片/视频)到阿里云 OSS 存储。     |
+| **Save to Signed PUT URL**                     | 通过预签名 PUT URL 上传文件。          |
 | **Save Metadata** / **Load Metadata From URL** | 保存或加载元数据（如图片描述、参数）。 |
 | **SolidColorBackground**                       | 自定义生成纯色背景图片                 |
+
+---
+
+## Wownow 流程配置
+
+`Light-Tool: DeserializeWownowProcessConfig` 接收一段 JSON 字符串，用于解析图片尺寸、原图地址以及服务端下发的预签名 PUT 上传地址。Go 侧可以使用如下结构体生成该 JSON：
+
+```go
+type WownowProcessConfig struct {
+	Width          int    `json:"width"`
+	Height         int    `json:"height"`
+	OriginImageURL string `json:"origin_image_url"`
+
+	UVImagePutURL        string `json:"uv_image_put_url"`
+	BinaryImagePutURL    string `json:"binary_image_put_url"`
+	DepthImagePutURL     string `json:"depth_image_put_url"`
+	NormalmapImagePutURL string `json:"normalmap_image_put_url"`
+	OutpaintImagePutURL  string `json:"outpaint_image_put_url"`
+}
+```
+
+这些 `*_put_url` 字段当前承载预签名 PUT URL，可直接连接到 `Light-Tool: SaveToSignedPutURL` 的 `put_url` 输入。
 
 ---
 
@@ -106,4 +128,3 @@ git clone https://github.com/ihmily/ComfyUI-Light-Tool.git
 本项目遵循 [MIT License](LICENSE)。  
 
 ---
-

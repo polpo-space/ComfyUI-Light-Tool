@@ -1160,8 +1160,6 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
                 "put_url": ("STRING", {"default": ""}),
                 "result_url": ("STRING", {"default": ""}),
                 "format": (["PNG", "JPEG", "WEBP"], {"default": "PNG"}),
-                "content_type": ("STRING", {"default": ""}),
-                "headers": ("STRING", {"default": "", "multiline": True}),
                 "timeout": ("INT", {"default": 120}),
             }
         }
@@ -1173,16 +1171,6 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
     CATEGORY = 'ComfyUI-Light-Tool/Upload'
     DESCRIPTION = "Uploads an image to a signed PUT URL without saving it locally"
 
-    @staticmethod
-    def _content_type_for_format(image_format):
-        if image_format == "PNG":
-            return "image/png"
-        if image_format == "JPEG":
-            return "image/jpeg"
-        if image_format == "WEBP":
-            return "image/webp"
-        return "application/octet-stream"
-
     def _encode_image(self, image, image_format):
         pil_image = tensor2pil(image)
         if image_format == "JPEG":
@@ -1192,7 +1180,7 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
         pil_image.save(image_bytes, format=image_format)
         return image_bytes.getvalue()
 
-    def save_image(self, images, put_url, result_url, format, content_type, headers, timeout):
+    def save_image(self, images, put_url, result_url, format, timeout):
         put_url = put_url.strip()
         if not put_url:
             raise ValueError("(ComfyUI-Light-Tool/Upload) put_url is required")
@@ -1205,12 +1193,9 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
         if image_format not in ("PNG", "JPEG", "WEBP"):
             raise ValueError("(ComfyUI-Light-Tool/Upload) format must be PNG, JPEG, or WEBP")
 
-        resolved_content_type = content_type.strip() or self._content_type_for_format(image_format)
-        upload_headers = self._parse_headers(headers, resolved_content_type)
         response = httpx.put(
             put_url,
             content=self._encode_image(images[0], image_format),
-            headers=upload_headers,
             timeout=timeout if timeout > 0 else None,
         )
 

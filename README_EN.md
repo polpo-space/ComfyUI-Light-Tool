@@ -90,9 +90,31 @@ Automatic installation through ComfyUI-Manager:
 | **PhantomTankEffect**                          | Generate "Phantom Tank" effects.                             |
 | **Is Transparent**                             | Detect whether an image is transparent.                      |
 | **Mask Bounding Box Cropping**                 | Crop images based on mask boundaries.                        |
-| **Save to Aliyun OSS**                         | Upload images/videos to Aliyun OSS storage.                  |
+| **Save to Signed PUT URL**                     | Upload files through a presigned PUT URL.                    |
 | **Save Metadata** / **Load Metadata From URL** | Save or load metadata (e.g., image descriptions, parameters). |
 | **SolidColorBackground**                       | Generate custom solid color background images.               |
+
+---
+
+## Wownow Process Config
+
+`Light-Tool: DeserializeWownowProcessConfig` accepts a JSON string for image dimensions, the origin image URL, and server-issued presigned PUT upload URLs. Go callers can generate that JSON with this struct:
+
+```go
+type WownowProcessConfig struct {
+	Width          int    `json:"width"`
+	Height         int    `json:"height"`
+	OriginImageURL string `json:"origin_image_url"`
+
+	UVImagePutURL        string `json:"uv_image_put_url"`
+	BinaryImagePutURL    string `json:"binary_image_put_url"`
+	DepthImagePutURL     string `json:"depth_image_put_url"`
+	NormalmapImagePutURL string `json:"normalmap_image_put_url"`
+	OutpaintImagePutURL  string `json:"outpaint_image_put_url"`
+}
+```
+
+The `*_put_url` fields currently carry presigned PUT URLs and can be connected directly to the `put_url` input of `Light-Tool: SaveToSignedPutURL`.
 
 ---
 

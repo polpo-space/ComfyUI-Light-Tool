@@ -12,6 +12,7 @@ import hashlib
 import time
 import uuid
 
+import httpx
 import numpy as np
 from PIL import ImageSequence, ImageOps
 from typing import Any, Tuple
@@ -20,7 +21,6 @@ from PIL.PngImagePlugin import PngInfo
 from torchvision.transforms import functional
 import folder_paths
 import node_helpers
-from oss_tool import oss_upload
 from image_upscale import UpscaleMode, upscale_image
 from image_scale import ScaleMode, scale_image
 
@@ -1072,7 +1072,7 @@ class SaveVideo:
         return {"ui": {"video_url": [video_url]}}
 
 
-class SaveVideoToAliyunOss:
+class SaveToSignedPutURL:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
         self.input_dir = folder_paths.get_input_directory()
@@ -1082,78 +1082,11 @@ class SaveVideoToAliyunOss:
         return {
             "required": {
                 "file": ("STRING", {"defaultInput": True}),
-                "save_name": ("STRING", {"default": ""}),
-                "endpoint": ("STRING", {"default": ""}),
-                "bucket": ("STRING", {"default": ""}),
-                "oss_access_key_id": ("STRING", {"default": ""}),
-                "oss_access_key_secret": ("STRING", {"default": ""}),
-                "oss_session_token": ("STRING", {"default": ""}),
-                "visit_endpoint": ("STRING", {"default": ""}),
-                "use_cname": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
-                "sign": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
-                "timeout": ("INT", {"default": 0}),
-            }
-        }
-
-    OUTPUT_NODE = True
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("video_url",)
-    FUNCTION = "save_video"
-    CATEGORY = 'ComfyUI-Light-Tool/Video'
-    DESCRIPTION = "Saves the video to aliyun OSS"
-
-    def save_video(self, file, save_name, endpoint, bucket, oss_access_key_id, oss_access_key_secret,
-                   oss_session_token, use_cname, visit_endpoint, sign, timeout):
-
-        if 'http' in file:
-            filename = save_name or file.split('?')[0].rsplit('/')[-1]
-            file_path = download_file(file, filename)
-        elif '/' not in file:
-            if os.path.exists(os.path.join(self.output_dir, file)):
-                file_path = os.path.join(self.output_dir, file)
-            else:
-                file_path = os.path.join(self.input_dir, file)
-        else:
-            file_path = file
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f'(ComfyUI-Light-Tool) {file_path} Upload file not exists')
-
-        video_url = oss_upload(
-            file_path,
-            filename=save_name,
-            endpoint=endpoint,
-            bucket=bucket,
-            oss_access_key_id=oss_access_key_id,
-            oss_access_key_secret=oss_access_key_secret,
-            oss_session_token=oss_session_token,
-            is_cname=use_cname,
-            visit_endpoint=visit_endpoint,
-            sign=sign,
-            timeout=timeout
-        )
-        return (video_url,)
-
-
-class SaveToAliyunOSS:
-    def __init__(self):
-        self.output_dir = folder_paths.get_output_directory()
-        self.input_dir = folder_paths.get_input_directory()
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "file": ("STRING", {"defaultInput": True}),
-                "save_name": ("STRING", {"default": ""}),
-                "endpoint": ("STRING", {"default": ""}),
-                "bucket": ("STRING", {"default": ""}),
-                "oss_access_key_id": ("STRING", {"default": ""}),
-                "oss_access_key_secret": ("STRING", {"default": ""}),
-                "oss_session_token": ("STRING", {"default": ""}),
-                "visit_endpoint": ("STRING", {"default": ""}),
-                "use_cname": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
-                "sign": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
-                "timeout": ("INT", {"default": 0}),
+                "put_url": ("STRING", {"default": ""}),
+                "result_url": ("STRING", {"default": ""}),
+                "content_type": ("STRING", {"default": "application/octet-stream"}),
+                "headers": ("STRING", {"default": "", "multiline": True}),
+                "timeout": ("INT", {"default": 120}),
             }
         }
 
@@ -1161,39 +1094,61 @@ class SaveToAliyunOSS:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("file_url",)
     FUNCTION = "save"
-    CATEGORY = 'ComfyUI-Light-Tool/OSS'
-    DESCRIPTION = "Saves the file to aliyun OSS"
+    CATEGORY = 'ComfyUI-Light-Tool/Upload'
+    DESCRIPTION = "Uploads a file to a signed PUT URL"
 
-    def save(self, file, save_name, endpoint, bucket, oss_access_key_id, oss_access_key_secret,
-             oss_session_token, use_cname, visit_endpoint, sign, timeout):
-
+    def _resolve_file_path(self, file):
         if 'http' in file:
-            filename = save_name or file.split('?')[0].rsplit('/')[-1]
-            file_path = download_file(file, filename)
-        elif '/' not in file:
-            if os.path.exists(os.path.join(self.output_dir, file)):
-                file_path = os.path.join(self.output_dir, file)
-            else:
-                file_path = os.path.join(self.input_dir, file)
-        else:
-            file_path = file
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f'(ComfyUI-Light-Tool/OSS) {file_path} Upload file not exists')
+            filename = file.split('?')[0].rsplit('/')[-1]
+            return download_file(file, filename)
+        if '/' not in file:
+            output_file = os.path.join(self.output_dir, file)
+            if os.path.exists(output_file):
+                return output_file
+            return os.path.join(self.input_dir, file)
+        return file
 
-        file_url = oss_upload(
-            file_path,
-            filename=save_name,
-            endpoint=endpoint,
-            bucket=bucket,
-            oss_access_key_id=oss_access_key_id,
-            oss_access_key_secret=oss_access_key_secret,
-            oss_session_token=oss_session_token,
-            is_cname=use_cname,
-            visit_endpoint=visit_endpoint,
-            sign=sign,
-            timeout=timeout
-        )
-        return (file_url,)
+    def _parse_headers(self, headers, content_type):
+        parsed_headers = {}
+        if content_type:
+            parsed_headers["Content-Type"] = content_type
+        if not headers or not headers.strip():
+            return parsed_headers
+        try:
+            extra_headers = json.loads(headers)
+        except json.JSONDecodeError as exc:
+            raise ValueError("(ComfyUI-Light-Tool/Upload) headers must be a JSON object") from exc
+        if not isinstance(extra_headers, dict):
+            raise ValueError("(ComfyUI-Light-Tool/Upload) headers must be a JSON object")
+        for key, value in extra_headers.items():
+            parsed_headers[str(key)] = str(value)
+        return parsed_headers
+
+    def save(self, file, put_url, result_url, content_type, headers, timeout):
+        put_url = put_url.strip()
+        if not put_url:
+            raise ValueError("(ComfyUI-Light-Tool/Upload) put_url is required")
+
+        file_path = self._resolve_file_path(file)
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f'(ComfyUI-Light-Tool/Upload) {file_path} Upload file not exists')
+
+        upload_headers = self._parse_headers(headers, content_type.strip())
+        with open(file_path, "rb") as upload_file:
+            response = httpx.put(
+                put_url,
+                content=upload_file,
+                headers=upload_headers,
+                timeout=timeout if timeout > 0 else None,
+            )
+
+        if response.status_code < 200 or response.status_code >= 300:
+            raise RuntimeError(
+                f"(ComfyUI-Light-Tool/Upload) signed PUT failed: "
+                f"status={response.status_code}, body={response.text[:500]}"
+            )
+
+        return ((result_url.strip() or put_url.split("?", 1)[0]),)
 
 
 class GetImageSize:
@@ -1772,7 +1727,7 @@ NODE_CLASS_MAPPINGS = {
     "Light-Tool: PreviewVideo": PreviewVideo,
     "Light-Tool: LoadVideo": LoadVideo,
     "Light-Tool: SaveVideo": SaveVideo,
-    "Light-Tool: SaveToAliyunOSS": SaveToAliyunOSS,
+    "Light-Tool: SaveToSignedPutURL": SaveToSignedPutURL,
     "Light-Tool: LoadMetadataFromURL": LoadMetadataFromURL,
     "Light-Tool: SaveMetadata": SaveMetadata,
     "Light-Tool: GetImagesCount": GetImagesCount,
@@ -1814,7 +1769,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Light-Tool: PreviewVideo": "Light-Tool: Preview Video",
     "Light-Tool: LoadVideo": "Light-Tool: Load Video",
     "Light-Tool: SaveVideo": "Light-Tool: Save Video",
-    "Light-Tool: SaveToAliyunOSS": "Light-Tool: Save File To Aliyun OSS",
+    "Light-Tool: SaveToSignedPutURL": "Light-Tool: Save File To Signed PUT URL",
     "Light-Tool: LoadMetadataFromURL": "Light-Tool: Load Metadata From URL",
     "Light-Tool: SaveMetadata": "Light-Tool: Save Metadata",
     "Light-Tool: GetImagesCount": "Light-Tool: Get Images Count",

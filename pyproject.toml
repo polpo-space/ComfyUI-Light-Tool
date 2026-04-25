@@ -1,9 +1,9 @@
 [project]
 name = "comfyui-light-tool"
 description = "An awesome light tool nodes for ComfyUI."
-version = "1.4.7"
+version = "1.4.8"
 license = { file = "LICENSE" }
-dependencies = ["numpy", "pillow", "torch", "opencv-python", "httpx", "opendatalab==0.0.9", "oss2", "pycryptodome"]
+dependencies = ["numpy", "pillow", "torch", "opencv-python", "httpx", "opendatalab==0.0.9", "pycryptodome"]
 
 [project.urls]
 Repository = "https://github.com/ihmily/ComfyUI-Light-Tool"

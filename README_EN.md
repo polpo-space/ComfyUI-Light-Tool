@@ -90,7 +90,8 @@ Automatic installation through ComfyUI-Manager:
 | **PhantomTankEffect**                          | Generate "Phantom Tank" effects.                             |
 | **Is Transparent**                             | Detect whether an image is transparent.                      |
 | **Mask Bounding Box Cropping**                 | Crop images based on mask boundaries.                        |
-| **Save to Signed PUT URL**                     | Upload files through a presigned PUT URL.                    |
+| **Save File to Signed PUT URL**                | Upload local files through a presigned PUT URL.              |
+| **Save Image to Signed PUT URL**               | Encode images and upload them directly to a presigned PUT URL. |
 | **Save Metadata** / **Load Metadata From URL** | Save or load metadata (e.g., image descriptions, parameters). |
 | **SolidColorBackground**                       | Generate custom solid color background images.               |
 
@@ -114,7 +115,7 @@ type WownowProcessConfig struct {
 }
 ```
 
-The `*_put_url` fields currently carry presigned PUT URLs and can be connected directly to the `put_url` input of `Light-Tool: SaveToSignedPutURL`.
+The `*_put_url` fields currently carry presigned PUT URLs and can be connected directly to the `put_url` input of `Light-Tool: SaveImageToSignedPutURL` or `Light-Tool: SaveToSignedPutURL`. Image outputs should use `SaveImageToSignedPutURL` directly, without saving a local file first.
 
 ---
 

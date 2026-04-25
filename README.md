@@ -89,7 +89,8 @@ git clone https://github.com/ihmily/ComfyUI-Light-Tool.git
 | **PhantomTankEffect**                          | 生成“幽灵坦克” ”幻影坦克“ 效果         |
 | **Is Transparent**                             | 检测图片是否是透明的。                 |
 | **Mask Bounding Box Cropping**                 | 根据蒙版边界裁剪图片。                 |
-| **Save to Signed PUT URL**                     | 通过预签名 PUT URL 上传文件。          |
+| **Save File to Signed PUT URL**                | 通过预签名 PUT URL 上传本地文件。      |
+| **Save Image to Signed PUT URL**               | 将图像直接编码并上传到预签名 PUT URL。 |
 | **Save Metadata** / **Load Metadata From URL** | 保存或加载元数据（如图片描述、参数）。 |
 | **SolidColorBackground**                       | 自定义生成纯色背景图片                 |
 
@@ -113,7 +114,7 @@ type WownowProcessConfig struct {
 }
 ```
 
-这些 `*_put_url` 字段当前承载预签名 PUT URL，可直接连接到 `Light-Tool: SaveToSignedPutURL` 的 `put_url` 输入。
+这些 `*_put_url` 字段当前承载预签名 PUT URL，可直接连接到 `Light-Tool: SaveImageToSignedPutURL` 或 `Light-Tool: SaveToSignedPutURL` 的 `put_url` 输入。图像输出建议直接使用 `SaveImageToSignedPutURL`，无需先保存到本地文件。
 
 ---
 

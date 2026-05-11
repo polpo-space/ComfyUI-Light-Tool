@@ -112,16 +112,13 @@ type WownowProcessConfig struct {
 	DepthImagePutURL     string `json:"depth_image_put_url"`
 	NormalmapImagePutURL string `json:"normalmap_image_put_url"`
 	OutpaintImagePutURL  string `json:"outpaint_image_put_url"`
-
-	NeedCropWhiteBorder bool `json:"need_crop_white_border"`
-	NeedUV              bool `json:"need_uv"`
-	NeedDepth           bool `json:"need_depth"`
+	CropImagePutURL      string `json:"crop_image_put_url"`
 }
 ```
 
 The `*_put_url` fields currently carry presigned PUT URLs and can be connected directly to the `put_url` input of `Light-Tool: SaveImageToSignedPutURL` or `Light-Tool: SaveToSignedPutURL`. Image outputs should use `SaveImageToSignedPutURL` directly, without saving a local file first.
 
-`need_crop_white_border`, `need_uv`, and `need_depth` are returned as boolean outputs so a unified workflow can control whether to crop white borders, generate UV output, and generate depth output. Missing fields default to `false`.
+`need_crop_white_border`, `need_uv`, and `need_depth` are returned as boolean outputs so a unified workflow can control whether to crop white borders, generate UV output, and generate depth output. These switches do not need to be sent as JSON input fields; the node infers them from whether `crop_image_put_url`, `uv_image_put_url`, and `depth_image_put_url` are present.
 
 ---
 

@@ -144,7 +144,10 @@ class DeserializeWownowProcessConfig:
                             '  "binary_image_put_url": "https://storage.example.com/upload/binary.png?signature=...",\n'
                             '  "depth_image_put_url": "https://storage.example.com/upload/depth.png?signature=...",\n'
                             '  "normalmap_image_put_url": "https://storage.example.com/upload/normal_map.png?signature=...",\n'
-                            '  "outpaint_image_put_url": "https://storage.example.com/upload/outpaint.png?signature=..."\n'
+                            '  "outpaint_image_put_url": "https://storage.example.com/upload/outpaint.png?signature=...",\n'
+                            '  "need_crop_white_border": false,\n'
+                            '  "need_uv": false,\n'
+                            '  "need_depth": false\n'
                             '}'
                         ),
                     },
@@ -161,6 +164,9 @@ class DeserializeWownowProcessConfig:
         "STRING",
         "STRING",
         "STRING",
+        "BOOLEAN",
+        "BOOLEAN",
+        "BOOLEAN",
     )
     RETURN_NAMES = (
         "width",
@@ -171,6 +177,9 @@ class DeserializeWownowProcessConfig:
         "depth_image_put_url",
         "normalmap_image_put_url",
         "outpaint_image_put_url",
+        "need_crop_white_border",
+        "need_uv",
+        "need_depth",
     )
 
     FUNCTION = "decode"
@@ -191,6 +200,21 @@ class DeserializeWownowProcessConfig:
             return int(value)
         except Exception:
             return default
+
+    def _as_bool(self, value, default=False):
+        if value is None or value == "":
+            return default
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value != 0
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in ("true", "1", "yes", "y", "on"):
+                return True
+            if normalized in ("false", "0", "no", "n", "off"):
+                return False
+        return default
 
     def decode(self, json_str: str):
         data = {}
@@ -215,6 +239,11 @@ class DeserializeWownowProcessConfig:
         outpaint_image_put_url = self._as_str(
             data.get("outpaint_image_put_url", "")
         ).strip()
+        need_crop_white_border = self._as_bool(
+            data.get("need_crop_white_border", False)
+        )
+        need_uv = self._as_bool(data.get("need_uv", False))
+        need_depth = self._as_bool(data.get("need_depth", False))
 
         print(
             "[WownowProcessConfigDecoder] Parsed:",
@@ -227,6 +256,9 @@ class DeserializeWownowProcessConfig:
                 "depth_image_put_url": depth_image_put_url,
                 "normalmap_image_put_url": normalmap_image_put_url,
                 "outpaint_image_put_url": outpaint_image_put_url,
+                "need_crop_white_border": need_crop_white_border,
+                "need_uv": need_uv,
+                "need_depth": need_depth,
             },
         )
 
@@ -239,6 +271,9 @@ class DeserializeWownowProcessConfig:
             depth_image_put_url,
             normalmap_image_put_url,
             outpaint_image_put_url,
+            need_crop_white_border,
+            need_uv,
+            need_depth,
         )
 
 

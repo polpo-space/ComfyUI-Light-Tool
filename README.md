@@ -111,10 +111,16 @@ type WownowProcessConfig struct {
 	DepthImagePutURL     string `json:"depth_image_put_url"`
 	NormalmapImagePutURL string `json:"normalmap_image_put_url"`
 	OutpaintImagePutURL  string `json:"outpaint_image_put_url"`
+
+	NeedCropWhiteBorder bool `json:"need_crop_white_border"`
+	NeedUV              bool `json:"need_uv"`
+	NeedDepth           bool `json:"need_depth"`
 }
 ```
 
 这些 `*_put_url` 字段当前承载预签名 PUT URL，可直接连接到 `Light-Tool: SaveImageToSignedPutURL` 或 `Light-Tool: SaveToSignedPutURL` 的 `put_url` 输入。图像输出建议直接使用 `SaveImageToSignedPutURL`，无需先保存到本地文件。
+
+`need_crop_white_border`、`need_uv`、`need_depth` 会作为布尔输出返回，可用于在统一 workflow 中控制是否裁切白边、是否生成 UV 图、是否生成深度图。字段缺省时默认返回 `false`。
 
 ---
 

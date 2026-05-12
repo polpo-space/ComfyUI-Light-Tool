@@ -1124,6 +1124,15 @@ class SaveToSignedPutURL:
             parsed_headers[str(key)] = str(value)
         return parsed_headers
 
+    def _log_signed_put_success(self, put_url, result_url, response):
+        file_url = result_url.strip() or put_url.split("?", 1)[0]
+        upload_url = put_url.split("?", 1)[0]
+        print(
+            f"(ComfyUI-Light-Tool/Upload) signed PUT succeeded: "
+            f"status={response.status_code}, upload_url={upload_url}, file_url={file_url}"
+        )
+        return file_url
+
     def save(self, file, put_url, result_url, content_type, headers, timeout):
         put_url = put_url.strip()
         if not put_url:
@@ -1148,7 +1157,7 @@ class SaveToSignedPutURL:
                 f"status={response.status_code}, body={response.text[:500]}"
             )
 
-        return ((result_url.strip() or put_url.split("?", 1)[0]),)
+        return ((self._log_signed_put_success(put_url, result_url, response)),)
 
 
 class SaveImageToSignedPutURL(SaveToSignedPutURL):
@@ -1205,7 +1214,7 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
                 f"status={response.status_code}, body={response.text[:500]}"
             )
 
-        return ((result_url.strip() or put_url.split("?", 1)[0]),)
+        return ((self._log_signed_put_success(put_url, result_url, response)),)
 
 
 class GetImageSize:

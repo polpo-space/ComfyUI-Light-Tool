@@ -1081,7 +1081,7 @@ class SaveToSignedPutURL:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "file": ("STRING", {"defaultInput": True}),
+                "file": ("STRING", {"defaultInput": True, "lazy": True}),
                 "put_url": ("STRING", {"default": ""}),
                 "result_url": ("STRING", {"default": ""}),
                 "content_type": ("STRING", {"default": "application/octet-stream"}),
@@ -1096,6 +1096,13 @@ class SaveToSignedPutURL:
     FUNCTION = "save"
     CATEGORY = 'ComfyUI-Light-Tool/Upload'
     DESCRIPTION = "Uploads a file to a signed PUT URL"
+
+    def check_lazy_status(self, file, put_url, result_url, content_type, headers, timeout):
+        if not put_url or not put_url.strip():
+            return []
+        if file is None:
+            return ["file"]
+        return []
 
     def _resolve_file_path(self, file):
         if 'http' in file:
@@ -1136,7 +1143,8 @@ class SaveToSignedPutURL:
     def save(self, file, put_url, result_url, content_type, headers, timeout):
         put_url = put_url.strip()
         if not put_url:
-            raise ValueError("(ComfyUI-Light-Tool/Upload) put_url is required")
+            print("(ComfyUI-Light-Tool/Upload) skipped signed PUT because put_url is empty")
+            return ("",)
 
         file_path = self._resolve_file_path(file)
         if not os.path.exists(file_path):
@@ -1165,7 +1173,7 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "images": ("IMAGE",),
+                "images": ("IMAGE", {"lazy": True}),
                 "put_url": ("STRING", {"default": ""}),
                 "result_url": ("STRING", {"default": ""}),
                 "format": (["PNG", "JPEG", "WEBP"], {"default": "PNG"}),
@@ -1180,6 +1188,13 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
     CATEGORY = 'ComfyUI-Light-Tool/Upload'
     DESCRIPTION = "Uploads an image to a signed PUT URL without saving it locally"
 
+    def check_lazy_status(self, images, put_url, result_url, format, timeout):
+        if not put_url or not put_url.strip():
+            return []
+        if images is None:
+            return ["images"]
+        return []
+
     def _encode_image(self, image, image_format):
         pil_image = tensor2pil(image)
         if image_format == "JPEG":
@@ -1192,7 +1207,8 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
     def save_image(self, images, put_url, result_url, format, timeout):
         put_url = put_url.strip()
         if not put_url:
-            raise ValueError("(ComfyUI-Light-Tool/Upload) put_url is required")
+            print("(ComfyUI-Light-Tool/Upload) skipped image signed PUT because put_url is empty")
+            return ("",)
         if len(images) != 1:
             raise ValueError(
                 "(ComfyUI-Light-Tool/Upload) SaveImageToSignedPutURL expects exactly one image"

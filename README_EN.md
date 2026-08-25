@@ -103,9 +103,10 @@ Automatic installation through ComfyUI-Manager:
 
 ```go
 type WownowProcessConfig struct {
-	Width          int    `json:"width"`
-	Height         int    `json:"height"`
-	OriginImageURL string `json:"origin_image_url"`
+	Width               int    `json:"width"`
+	Height              int    `json:"height"`
+	OriginImageURL      string `json:"origin_image_url"`
+	DepthBorderImageURL string `json:"depth_border_image_url"`
 
 	UVImagePutURL        string `json:"uv_image_put_url"`
 	BinaryImagePutURL    string `json:"binary_image_put_url"`

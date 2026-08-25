@@ -21,6 +21,7 @@ class DeserializeWownowProcessConfigTest(unittest.TestCase):
             "uv_image_put_url": "https://storage.example.com/uv.png",
             "binary_image_put_url": "https://storage.example.com/binary.png",
             "depth_image_put_url": "https://storage.example.com/depth.png",
+            "depth_border_image_url": "https://cdn.example.com/depth-border.png",
             "normalmap_image_put_url": "https://storage.example.com/normal.png",
             "outpaint_image_put_url": "https://storage.example.com/outpaint.png",
             "crop_image_put_url": "https://storage.example.com/crop.png",
@@ -43,6 +44,7 @@ class DeserializeWownowProcessConfigTest(unittest.TestCase):
                 True,
                 True,
                 True,
+                "https://cdn.example.com/depth-border.png",
             ),
         )
 
@@ -58,12 +60,12 @@ class DeserializeWownowProcessConfigTest(unittest.TestCase):
 
         result = DeserializeWownowProcessConfig().decode(json.dumps(config))
 
-        self.assertEqual(result[9:], (True, True, True))
+        self.assertEqual(result[9:], (True, True, True, ""))
 
     def test_decode_defaults_missing_process_switches_to_false(self):
         result = DeserializeWownowProcessConfig().decode("{}")
 
-        self.assertEqual(result[8:], ("", False, False, False))
+        self.assertEqual(result[8:], ("", False, False, False, ""))
 
 
 if __name__ == "__main__":

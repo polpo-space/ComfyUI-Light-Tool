@@ -140,6 +140,7 @@ class DeserializeWownowProcessConfig:
                             '  "width": 1024,\n'
                             '  "height": 1024,\n'
                             '  "origin_image_url": "https://cdn.example.com/images/f3301718e9dbf7e7d703b73a144afa32.jpg",\n'
+                            '  "depth_border_image_url": "https://cdn.example.com/images/depth_border.png",\n'
                             '  "uv_image_put_url": "https://storage.example.com/upload/uv.png?signature=...",\n'
                             '  "binary_image_put_url": "https://storage.example.com/upload/binary.png?signature=...",\n'
                             '  "depth_image_put_url": "https://storage.example.com/upload/depth.png?signature=...",\n'
@@ -166,6 +167,7 @@ class DeserializeWownowProcessConfig:
         "BOOLEAN",
         "BOOLEAN",
         "BOOLEAN",
+        "STRING",
     )
     RETURN_NAMES = (
         "width",
@@ -180,6 +182,7 @@ class DeserializeWownowProcessConfig:
         "need_crop_white_border",
         "need_uv",
         "need_depth",
+        "depth_border_image_url",
     )
 
     FUNCTION = "decode"
@@ -218,6 +221,9 @@ class DeserializeWownowProcessConfig:
         uv_image_put_url = self._as_str(data.get("uv_image_put_url", "")).strip()
         binary_image_put_url = self._as_str(data.get("binary_image_put_url", "")).strip()
         depth_image_put_url = self._as_str(data.get("depth_image_put_url", "")).strip()
+        depth_border_image_url = self._as_str(
+            data.get("depth_border_image_url", "")
+        ).strip()
         normalmap_image_put_url = self._as_str(
             data.get("normalmap_image_put_url", "")
         ).strip()
@@ -240,6 +246,7 @@ class DeserializeWownowProcessConfig:
                 "uv_image_put_url": uv_image_put_url,
                 "binary_image_put_url": binary_image_put_url,
                 "depth_image_put_url": depth_image_put_url,
+                "depth_border_image_url": depth_border_image_url,
                 "normalmap_image_put_url": normalmap_image_put_url,
                 "outpaint_image_put_url": outpaint_image_put_url,
                 "crop_image_put_url": crop_image_put_url,
@@ -262,6 +269,7 @@ class DeserializeWownowProcessConfig:
             need_crop_white_border,
             need_uv,
             need_depth,
+            depth_border_image_url,
         )
 
 

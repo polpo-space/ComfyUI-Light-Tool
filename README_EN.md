@@ -54,24 +54,7 @@ Automatic installation through ComfyUI-Manager:
 | **Extract Transparent Image**                                | Extract foreground transparent images from the original using a mask. |
 | **Mask Background to Transparent**                           | Convert non-mask areas in mask images to transparency.       |
 
-### 2. Text Processing
-
-| Node Name                                                  | Function Description               |
-| ---------------------------------------------------------- | ---------------------------------- |
-| **Input Text**                                             | Input text.                        |
-| **Input Text List**                                        | Input a list of texts.             |
-| **Connect Text Strings** / **Simple Connect Text Strings** | Concatenate multiple text strings. |
-| **Show Text**                                              | Display text content.              |
-
-### 3. Video Related
-
-| Node Name         | Function Description                     |
-| ----------------- | ---------------------------------------- |
-| **Load Video**    | Load videos (from video URLs).           |
-| **Preview Video** | Preview video content (from video URLs). |
-| **Save Video**    | Save videos to a local directory.        |
-
-### 4. Data Processing
+### 2. Data Processing
 
 | Node Name                      | Function Description                                         |
 | ------------------------------ | ------------------------------------------------------------ |
@@ -83,7 +66,7 @@ Automatic installation through ComfyUI-Manager:
 | **KeyValue**                   | Extract key-value pairs from JSON data.                      |
 | **Serialize/Deserialize JSON** | Serialize or deserialize JSON objects.                       |
 
-### 5. Practical Tools
+### 3. Practical Tools
 
 | Node Name                                      | Function Description                                         |
 | ---------------------------------------------- | ------------------------------------------------------------ |

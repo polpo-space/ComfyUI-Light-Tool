@@ -9,7 +9,6 @@ import sys
 import os
 import io
 import hashlib
-import time
 import uuid
 
 import numpy as np
@@ -934,144 +933,6 @@ class RGBA2RGB:
         return (new_image,)
 
 
-class InputText:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "input_text": (
-                    "STRING", {"defaultInput": False, "multiline": True, "placeholder": "Please input text"}),
-            },
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("text",)
-    FUNCTION = "input_text"
-    CATEGORY = 'ComfyUI-Light-Tool/Text'
-    DESCRIPTION = "Input string text "
-
-    @staticmethod
-    def input_text(input_text):
-        input_text = '' if not input_text else input_text.strip()
-        return (input_text,)
-
-
-class ShowText:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "text": (any_type, {"defaultInput": True, "multiline": True}),
-            }
-        }
-
-    INPUT_IS_LIST = True
-    OUTPUT_NODE = True
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("text",)
-    FUNCTION = "show_text"
-    CATEGORY = 'ComfyUI-Light-Tool/Text'
-    OUTPUT_IS_LIST = (True,)
-    DESCRIPTION = "Show output Text"
-
-    @staticmethod
-    def show_text(text):
-        output = text[0] if isinstance(text[0], list) else text
-        return {"ui": {"text": output}, "result": (output,)}
-
-
-class PreviewVideo:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "video_url": (
-                    "STRING",
-                    {"defaultInput": True, "multiline": True, "placeholder": "Please input video url"}
-                )
-            }
-        }
-
-    OUTPUT_NODE = True
-    RETURN_TYPES = ()
-    RETURN_NAMES = ("video",)
-    FUNCTION = "preview_video"
-    CATEGORY = 'ComfyUI-Light-Tool/Video'
-    DESCRIPTION = "Preview video from video url"
-
-    @staticmethod
-    def preview_video(video_url):
-        return {"ui": {"video_url": [video_url]}}
-
-
-class LoadVideo:
-    def __init__(self):
-        self.input_dir = folder_paths.get_input_directory()
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "video_url": ("STRING", {"defaultInput": True}),
-                "server": ("STRING", {"defaultInput": False, "default": '', "placeholder": "server address"}),
-                "save_dir": ("STRING", {"defaultInput": False, "default": ''}),
-            }
-        }
-
-    OUTPUT_NODE = True
-    RETURN_TYPES = ("STRING", "STRING", "STRING")
-    RETURN_NAMES = ("video_name", "video_path", "video_url")
-    FUNCTION = "load_video"
-    CATEGORY = 'ComfyUI-Light-Tool/Video'
-    DESCRIPTION = "Load the video from video url and save to your directory"
-
-    def load_video(self, video_url, server, save_dir):
-        filename = str(uuid.uuid4()) + ".mp4"
-        save_file_path = os.path.join(self.input_dir, save_dir)
-        os.makedirs(save_file_path, exist_ok=True)
-        full_file_path = os.path.join(save_file_path, filename)
-        download_file(video_url, full_file_path)
-        t13 = int(time.time() * 1000)
-        server_url = server.split('?')[0].strip().rstrip('/')
-        video_url = f"{server_url}/api/view?filename={filename}&type=input&subfolder={save_dir}&t={t13}"
-        return filename, full_file_path, video_url
-
-
-class SaveVideo:
-    def __init__(self):
-        self.output_dir = folder_paths.get_output_directory()
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "video_url": ("STRING", {"defaultInput": True}),
-                "server": ("STRING", {"defaultInput": False, "default": '', "placeholder": "server address"}),
-                "save_dir": ("STRING", {"defaultInput": False, "default": ''}),
-            }
-        }
-
-    OUTPUT_NODE = True
-    RETURN_TYPES = ()
-    RETURN_NAMES = ()
-    FUNCTION = "save_video"
-    CATEGORY = 'ComfyUI-Light-Tool/Video'
-    DESCRIPTION = "Saves the video by video url to your directory"
-
-    def save_video(self, video_url, server, save_dir):
-        filename = str(uuid.uuid4())
-        save_file_path = os.path.join(self.output_dir, save_dir)
-        os.makedirs(save_file_path, exist_ok=True)
-        download_file(video_url, os.path.join(save_file_path, filename + ".mp4"))
-        t13 = int(time.time() * 1000)
-        server_url = server.split('?')[0].strip().rstrip('/')
-        video_url = f"{server_url}/api/view?filename={filename}.mp4&type=output&subfolder={save_dir}&t={t13}"
-        return {"ui": {"video_url": [video_url]}}
-
-
 class SaveToSignedPutURL:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
@@ -1328,103 +1189,6 @@ class ImageConcat:
         result_img = pil2tensor(new_image)
         mask = np2tensor(np.array(new_image)[:, :, 0])
         return result_img, mask
-
-
-class TextConnect:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-            },
-            "optional": {
-                "string_list": (any_type, {"default": ""}),
-                "string_1": ("STRING", ),
-                "string_2": ("STRING", ),
-                "string_3": ("STRING", ),
-                "string_4": ("STRING", ),
-                "delimiter": ("STRING", {"default": ""}),
-            }
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("text",)
-    FUNCTION = "text_connect"
-    CATEGORY = 'ComfyUI-Light-Tool/Text'
-    DESCRIPTION = "Connect multiple text strings"
-
-    @staticmethod
-    def text_connect(delimiter, **kwargs):
-        string_list1 = kwargs.get('string_list')
-        string_list2 = [x for x in kwargs.values() if x and not isinstance(x, list)]
-        all_string_list = string_list1 + string_list2 if string_list1 else string_list2
-        return (delimiter.join(all_string_list),)
-
-
-class SimpleTextConnect:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "string1": (any_type, {"default": ""}),
-                "string2": ("STRING", {"default": ""}),
-                "delimiter": ("STRING", {"default": ""}),
-            },
-            "optional": {
-            }
-        }
-
-    RETURN_TYPES = (any_type,)
-    RETURN_NAMES = ("text",)
-    FUNCTION = "text_connect"
-    CATEGORY = 'ComfyUI-Light-Tool/Text'
-    DESCRIPTION = "Connect multiple text strings"
-
-    @staticmethod
-    def text_connect(string1, string2, delimiter):
-        if type(string1) == list:
-            connect_result = []
-            for str1 in string1:
-                result = str1 + delimiter + string2
-                connect_result.append(result)
-        else:
-            connect_result = string1 + delimiter + string2
-        return (connect_result,)
-
-
-class InputTextList:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-            },
-            "optional": {
-                "string_1": ("STRING", ),
-                "string_2": ("STRING", ),
-                "string_3": ("STRING", ),
-                "string_4": ("STRING", ),
-            }
-        }
-
-    OUTPUT_IS_LIST = (True, )
-    OUTPUT_NODE = True
-    RETURN_TYPES = (any_type,)
-    RETURN_NAMES = ("strings",)
-    FUNCTION = "input_text_list"
-    CATEGORY = 'ComfyUI-Light-Tool/Text'
-    DESCRIPTION = "Connect multiple text strings"
-
-    @staticmethod
-    def input_text_list(**kwargs):
-        return ([[x for x in kwargs.values() if x]],)
 
 
 class MorphologicalTF:
@@ -1773,11 +1537,6 @@ class GetSideLength:
 
 
 NODE_CLASS_MAPPINGS = {
-    "Light-Tool: InputText": InputText,
-    "Light-Tool: InputTextList": InputTextList,
-    "Light-Tool: ShowText": ShowText,
-    "Light-Tool: TextConnect": TextConnect,
-    "Light-Tool: SimpleTextConnect": SimpleTextConnect,
     "Light-Tool: LoadImage": LoadImage,
     "Light-Tool: LoadImageFromURL": LoadImageFromURL,
     "Light-Tool: LoadImagesFromDir": LoadImagesFromDir,
@@ -1805,9 +1564,6 @@ NODE_CLASS_MAPPINGS = {
     "Light-Tool: MaskContourExtractor": MaskContourExtractor,
     "Light-Tool: SolidColorBackground": AdvancedSolidColorBackground,
     "Light-Tool: ImageConcat": ImageConcat,
-    "Light-Tool: PreviewVideo": PreviewVideo,
-    "Light-Tool: LoadVideo": LoadVideo,
-    "Light-Tool: SaveVideo": SaveVideo,
     "Light-Tool: SaveToSignedPutURL": SaveToSignedPutURL,
     "Light-Tool: SaveImageToSignedPutURL": SaveImageToSignedPutURL,
     "Light-Tool: LoadMetadataFromURL": LoadMetadataFromURL,
@@ -1817,11 +1573,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Light-Tool: InputText": "Light-Tool: Input Text",
-    "Light-Tool: ShowText": "Light-Tool: Show Text",
-    "Light-Tool: InputTextList": "Light-Tool: Input Text List",
-    "Light-Tool: TextConnect": "Light-Tool: Connect Text Strings",
-    "Light-Tool: SimpleTextConnect": "Light-Tool: Simple Connect Text Strings",
     "Light-Tool: LoadImage": "Light-Tool: Load Image",
     "Light-Tool: LoadImageFromURL": "Light-Tool: Load Image From URL",
     "Light-Tool: LoadImagesFromDir": "Light-Tool: Load Image List",
@@ -1848,9 +1599,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Light-Tool: PhantomTankEffect": "Light-Tool: Generate PhantomTankEffect",
     "Light-Tool: SolidColorBackground": "Light-Tool: SolidColorBackground",
     "Light-Tool: ImageConcat": "Light-Tool: Image Concat",
-    "Light-Tool: PreviewVideo": "Light-Tool: Preview Video",
-    "Light-Tool: LoadVideo": "Light-Tool: Load Video",
-    "Light-Tool: SaveVideo": "Light-Tool: Save Video",
     "Light-Tool: SaveToSignedPutURL": "Light-Tool: Save File To Signed PUT URL",
     "Light-Tool: SaveImageToSignedPutURL": "Light-Tool: Save Image To Signed PUT URL",
     "Light-Tool: LoadMetadataFromURL": "Light-Tool: Load Metadata From URL",

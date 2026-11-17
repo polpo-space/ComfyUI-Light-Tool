@@ -6,7 +6,7 @@
 """
 from typing import Union, List
 import cv2
-import httpx
+from light_tool_http import get_with_retry
 import numpy as np
 import torch
 from PIL import Image, ImageChops
@@ -90,13 +90,12 @@ def download_file(url, file_name):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'
     }
-    with httpx.Client() as client:
-        response = client.get(url, headers=headers, follow_redirects=True)
-        response.raise_for_status()
+    response = get_with_retry(url, headers=headers, follow_redirects=True)
+    response.raise_for_status()
 
-        with open(file_name, "wb") as file:
-            for chunk in response.iter_bytes(chunk_size=8192):
-                file.write(chunk)
+    with open(file_name, "wb") as file:
+        for chunk in response.iter_bytes(chunk_size=8192):
+            file.write(chunk)
     print(f"File downloaded as {file_name}")
     return file_name
 

@@ -12,7 +12,6 @@ import hashlib
 import time
 import uuid
 
-import httpx
 import numpy as np
 from PIL import ImageSequence, ImageOps
 from typing import Any, Tuple
@@ -27,6 +26,7 @@ from image_scale import ScaleMode, scale_image
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from light_tool_utils import *
+from light_tool_http import get_with_retry, put_bytes_with_retry, put_file_with_retry
 
 
 class AnyType(str):
@@ -146,7 +146,7 @@ class LoadImageFromURL:
         url_list = url.replace('，', ',').split(',')
         image_list = []
         for url in url_list:
-            response = httpx.get(url.strip())
+            response = get_with_retry(url.strip())
             if response.status_code == 200:
                 image_data = response.content
                 image = Image.open(io.BytesIO(image_data))
@@ -1151,13 +1151,12 @@ class SaveToSignedPutURL:
             raise FileNotFoundError(f'(ComfyUI-Light-Tool/Upload) {file_path} Upload file not exists')
 
         upload_headers = self._parse_headers(headers, content_type.strip())
-        with open(file_path, "rb") as upload_file:
-            response = httpx.put(
-                put_url,
-                content=upload_file,
-                headers=upload_headers,
-                timeout=timeout if timeout > 0 else None,
-            )
+        response = put_file_with_retry(
+            put_url,
+            file_path,
+            headers=upload_headers,
+            timeout=timeout if timeout > 0 else None,
+        )
 
         if response.status_code < 200 or response.status_code >= 300:
             raise RuntimeError(
@@ -1218,7 +1217,7 @@ class SaveImageToSignedPutURL(SaveToSignedPutURL):
         if image_format not in ("PNG", "JPEG", "WEBP"):
             raise ValueError("(ComfyUI-Light-Tool/Upload) format must be PNG, JPEG, or WEBP")
 
-        response = httpx.put(
+        response = put_bytes_with_retry(
             put_url,
             content=self._encode_image(images[0], image_format),
             timeout=timeout if timeout > 0 else None,
